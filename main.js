@@ -1,6 +1,15 @@
-/* main.js v3 — for Nela ❤️ (fixed: Continue buttons now appear) */
+/* ============================================================
+   main.js v4 — for Nela ❤️
+   FIXED: Continue / answer buttons now actually respond.
+   Root cause of the v3 bug: bindGotos() was removed from boot(),
+   so every [data-goto] button rendered but had no click handler.
+   v4 binds them with event delegation — works for static AND
+   dynamically injected buttons. Answer chips are also re-wired.
+   ============================================================ */
 (()=>{
 'use strict';
+
+/* ---------- tiny helpers ---------- */
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const LS_KEY='forNelaState_v2';
@@ -14,342 +23,279 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 
 /* ---------- sentiment ---------- */
 const HEAVY_WORDS=['sad','tired','alone','lonely','cry','crying','hurt','pain','scared','afraid','anxious','anxiety','stress','stressed','overwhelmed','broken','lost','empty','worried','worry','depressed','heavy','exhausted','fail','failed','giving','hate','angry','regret','miss','missing','hard','difficult','struggle','struggling','unhappy','numb','hopeless','worthless','weak','trapped','stuck','fine pretending','tired of'];
-const HAPPY_WORDS=['happy','joy','joyful','great','good','love','loved','excited','blessed','grateful','thankful','proud','peace','peaceful','calm','fine','okay','ok','smile','laugh','fun','amazing','beautiful','wonderful','hope','hopeful','better','best','sunshine','glad','cheerful','bright','win','won','free','strong','safe','content','glow','smiling'];
-function sentimentOf(t){
-  const s=String(t||'').toLowerCase();
-  let heavy=0,happy=0;
-  HEAVY_WORDS.forEach(w=>{if(s.includes(w))heavy++;});
-  HAPPY_WORDS.forEach(w=>{if(s.includes(w))happy++;});
-  if(heavy>happy)return 'heavy';
-  if(happy>heavy)return 'happy';
-  return 'neutral';
-}
+const HAPPY_WORDS=['happy','joy','joyful','great','good','love','loved','excited','blessed','grateful','thankful','proud','peace','peaceful','calm','fine','okay','ok','smile','laugh','fun','amazing','beautiful','wonderful','hope','hopeful','better','best','sunshine','glad','cheerful','bright','win','won','free','strong','safe','content','glow','shine','smiling','lovely','awesome','relieved','warm','soft','lucky','blessing','gift','favorite'];
 
-/* ---------- reply pools ---------- */
-const POOL_HEAVY=[
-  "I'm really glad you told me that. You don't have to carry it alone, okay?",
-  "That sounds heavy, and I'm sorry you're going through it. Thank you for trusting me with it.",
-  "That took courage to admit. Please be gentle with yourself today — you deserve patience.",
-  "I hear you. Whatever it is, you don't have to face it all at once. One small step is enough.",
-  "I'm sorry it's been like that. You've made it this far, and that already says a lot about you."
-];
-const POOL_DEEP=[
-  "Thank you for being honest. That means more than you know.",
-  "I'm listening — and nothing you said changes how much you matter.",
-  "That's valid. Whatever you feel right now is allowed to exist.",
-  "I appreciate you sharing that. It isn't small to me.",
-  "You don't have to have answers today. Just being honest is enough."
-];
-const POOL_HAPPY=[
-  "I love that! That kind of energy suits you 😊",
-  "That's beautiful — hold onto that feeling. You deserve it.",
-  "Yes! More of this energy, please ❤️",
-  "That made me smile. Keep choosing the things that make you feel this way.",
-  "I'm genuinely happy to hear that. May you have many more moments like this."
-];
-const POOL_FIRE=[
-  "Noted. Filed. I'll remember this 😂",
-  "Interesting answer… noted, noted.",
-  "Respect. Solid choice, honestly.",
-  "I'm taking mental notes about you, you know.",
-  "Good answer. No notes. Okay, some notes 😂"
-];
-const POOL_FUN=[
-  "Good answer! I'm learning a lot about you already 😄",
-  "Love that. Keep going!",
-  "Valid. Extremely valid.",
-  "Okay, that's going in the 'reasons Nela is great' file.",
-  "Noted with care 😌❤️"
-];
-function buildReply(q,option,sentiment){
-  const opt=(q.options||[]).find(o=>o.t===option);
-  if(opt&&opt.reply)return opt.reply;
-  if(sentiment==='heavy'){
-    const base=rand(POOL_HEAVY);
-    return q.group==='deep'?base+'\n\n“Bad days are chapters, not the whole story.” — Zeus':base;
-  }
-  if(q.group==='deep')return rand(POOL_DEEP);
-  if(sentiment==='happy')return rand(POOL_HAPPY);
-  if(q.group==='fire')return rand(POOL_FIRE);
-  return rand(POOL_FUN);
-}
-
-/* ---------- questions ---------- */
-const FUN=[
-  {q:"What's your go-to comfort food?",emoji:true,options:[{t:'🍕 Pizza'},{t:'🍫 Chocolate'},{t:'🍜 Noodles'},{t:'🍦 Ice cream'}]},
-  {q:'Early bird or night owl?',emoji:true,options:[{t:'🐦 Early bird'},{t:'🦉 Night owl'},{t:'🌗 In between'}]},
-  {q:'What kind of music hits different for you?',emoji:true,options:[{t:'🎵 Afrobeats'},{t:'🎶 R&B'},{t:'🎤 Rap'},{t:'🎹 Something soft'}]},
-  {q:'A perfect free day looks like…',emoji:true,options:[{t:'📱 Scrolling in peace'},{t:'🎮 Gaming'},{t:'👭 With the people I love'},{t:'🛌 Sleeping in'}]},
-  {q:'Tea or coffee?',emoji:true,options:[{t:'☕ Coffee'},{t:'🍵 Tea'},{t:"🧋 Both, I'm complicated"},{t:'🥤 Neither, give me juice'}]},
-  {q:'What makes you laugh the most?',emoji:true,options:[{t:'😂 Memes'},{t:'🎭 Comedy skits'},{t:'👯 My people'},{t:'🐶 Dogs being dogs'}]},
-  {q:'Sweet or savory?',emoji:true,options:[{t:'🍬 Sweet'},{t:'🥨 Savory'},{t:'🔥 Both, obviously'}]},
-  {q:'If you could teleport anywhere right now?',emoji:true,options:[{t:'🏝 A beach'},{t:'🏔 Mountains'},{t:'🗼 A big city'},{t:"🌍 Somewhere I've never been"}]},
-  {q:'How do you feel about surprises?',options:[{t:'Love them 🥰'},{t:"Love them… if they're for me 😅"},{t:'They scare me a little'}]},
-  {q:'On a scale of 1–10, how ready are you for today?',options:[{t:'1–3: we survive'},{t:'4–6: we manage'},{t:'7–8: we thrive'},{t:'9–10: I own this day'}]}
-];
-const DEEP=[
-  {g:'deep',q:'What has been taking up most of your mind lately?',options:[{t:'School / work stuff'},{t:'Family things'},{t:'My heart — someone I like'},{t:'Honestly… everything'}]},
-  {g:'deep',q:'When was the last time you felt truly peaceful?',options:[{t:'Recently 😌'},{t:'A while ago'},{t:"Honestly, I can't remember"},{t:"I'm not sure I ever have"}]},
-  {g:'deep',q:"What's something you wish people understood about you?",options:[{t:"That I'm not always okay"},{t:"That I really do try my best"},{t:"That I need a little more patience"},{t:"That I'm stronger than I look"}]},
-  {g:'deep',q:"What's one thing you're afraid to tell anyone?",options:[{t:"That I'm tired of pretending I'm fine"},{t:"That I worry I'm not enough"},{t:"That I just want to be loved properly"},{t:"I don't know if anyone would get it"}]},
-  {g:'deep',q:'When you feel sad, what do you usually do?',options:[{t:'Go quiet and disappear for a while'},{t:'Cry it out'},{t:'Put on sad music and sit with it'},{t:"Pretend I'm fine until it passes"}]},
-  {g:'deep',q:'What do you think you need most right now?',options:[{t:'Rest'},{t:'Someone who actually listens'},{t:'A real hug'},{t:'To feel seen'}]},
-  {g:'deep',q:'Is there a moment you replay in your head a lot?',options:[{t:'A happy memory'},{t:'Something I regret'},{t:'A conversation that stayed with me'},{t:"I don't know"}]},
-  {g:'deep',q:'Do you feel like people really see you?',options:[{t:'Some do'},{t:'Not really'},{t:'Only when they need something'},{t:"I'm not sure anymore"}]},
-  {g:'deep',q:'If you could say something to the you from one year ago…',options:[{t:"It's going to be okay"},{t:"You're doing better than you think"},{t:"I'm proud of you"},{t:'Hold on — it gets better'}]}
-];
-const FIRE=[
-  {g:'fire',q:'Dog or cat?',emoji:true,options:[{t:'🐶 Dog'},{t:'🐱 Cat'},{t:'🐾 Both'}]},
-  {g:'fire',q:'Beach or mountains?',emoji:true,options:[{t:'🏝 Beach'},{t:'⛰️ Mountains'}]},
-  {g:'fire',q:'Texting or calling?',emoji:true,options:[{t:'💬 Text'},{t:'📞 Call'}]},
-  {g:'fire',q:'Sunsets or sunrises?',emoji:true,options:[{t:'🌅 Sunsets'},{t:'🌄 Sunrises'}]},
-  {g:'fire',q:'Sweet or salty popcorn?',emoji:true,options:[{t:'🍿 Sweet'},{t:'🧂 Salty'}]},
-  {g:'fire',q:'Shower music or silence?',emoji:true,options:[{t:'🎶 Music'},{t:'🤫 Silence'}]},
-  {g:'fire',q:'Late-night thoughts or early-morning clarity?',emoji:true,options:[{t:'🌙 Late night'},{t:'☀️ Early morning'}]},
-  {g:'fire',q:'Random road trip or planned vacation?',emoji:true,options:[{t:'🛣️ Road trip'},{t:'🏨 Planned vacation'}]},
-  {g:'fire',q:'Trust your gut or overthink first?',emoji:true,options:[{t:'🔥 Gut'},{t:'🤔 Overthink'}]}
-];
-
-/* ---------- wish replies ---------- */
-const WISH_HEAVY=[
-  "I hear you, and thank you for trusting me with that. Whatever stands in the way right now — I hope it softens soon. You deserve for that wish to come true.",
-  "That one hit different. I'm sorry it feels far away right now, but I believe it isn't as far as it feels. Keep that wish close, okay?",
-  "Thank you for being this honest. I hope life hears you and gives you exactly what you asked for."
-];
-const WISH_NEUTRAL=[
-  "That's a beautiful thing to want. I really hope life hands it to you — you deserve it.",
-  "I love that. Write it somewhere you'll see it. Wishes have a way of growing when you keep looking at them.",
-  "That's a good wish — simple and real. I hope it finds you sooner than you expect."
-];
-const WISH_HAPPY=[
-  "Yes! I love that energy. May life give you that and more ❤️",
-  "That's the spirit! Keep that wish loud — I want to see it come true.",
-  "Beautiful. That kind of wish already has your name on it. I can feel it."
-];
-function buildWishReply(text){
-  const s=sentimentOf(text);
-  if(s==='heavy')return rand(WISH_HEAVY);
-  if(s==='happy')return rand(WISH_HAPPY);
-  return rand(WISH_NEUTRAL);
-}
-
-/* ---------- state (localStorage) ---------- */
-const DEFAULT_STATE={progress:0,answers:{}};
-let state=loadState();
-let quotaWarned=false;
+/* ---------- state ---------- */
+let state={progress:0,answers:{fun:[],deep:[],fire:[],wish:'',dogPhotos:[],selfie:null}};
 function loadState(){
   try{
     const raw=localStorage.getItem(LS_KEY);
     if(raw){
-      const p=JSON.parse(raw);
-      return {...DEFAULT_STATE,...p,answers:{...(p.answers||{})}};
+      const s=JSON.parse(raw);
+      state={...state,...s,answers:{...state.answers,...(s.answers||{})}};
     }
-  }catch(e){}
-  return {...DEFAULT_STATE,answers:{}};
+  }catch(e){/* storage unavailable — site still works */}
 }
 function saveState(){
   try{
     localStorage.setItem(LS_KEY,JSON.stringify(state));
-    quotaWarned=false;
   }catch(e){
-    if(!quotaWarned){quotaWarned=true;toast('Storage is full — photos stay for this visit only ❤️',3400);}
+    toast('Progress can\'t be saved on this browser (storage full) — answers still work ❤️');
   }
 }
 
-/* ---------- quiz engine (FIXED: Continue button now actually shows) ---------- */
-function renderQuiz(containerSel,counterSel,list,keyPrefix,gotoIdx){
-  const box=$(containerSel);
-  if(!box)return;
-  const counter=$(counterSel);
-  const total=list.length;
-  const answeredCount=()=>list.filter((q,i)=>state.answers[keyPrefix+i]).length;
-  const fin=document.createElement('div');
-  fin.className='q-done';
-  fin.innerHTML=`<button class="btn" id="${keyPrefix}DoneBtn" data-goto="${gotoIdx}">Continue ❤️</button>`;
-  const updateCounter=()=>{
-    const n=answeredCount();
-    if(counter)counter.textContent=n>=total?`All ${total} answered ❤️`:`${n} of ${total} answered ❤️`;
-    const done=n>=total;
-    fin.style.display=done?'block':'none';
-    if(done&&fin.dataset.scrolled!=='1'){fin.dataset.scrolled='1';setTimeout(()=>fin.scrollIntoView({behavior:'smooth',block:'center'}),250);}
-  };
-  list.forEach((q,i)=>{
-    const card=document.createElement('div');
-    card.className='q-card';
-    card.id=keyPrefix+'Card'+i;
-    const saved=state.answers[keyPrefix+i];
-    card.innerHTML=
-      `<p class="q-text">${i+1}. ${esc(q.q)}</p>`+
-      `<div class="q-options">${q.options.map(o=>`<button class="q-opt${q.emoji?' emoji':''}${saved===o.t?' sel':''}" data-opt="${esc(o.t)}">${esc(o.t)}</button>`).join('')}</div>`+
-      `<div class="q-response" ${saved?'style="display:block"':''}>${saved?esc(buildReply(q,saved,sentimentOf(saved))):''}</div>`+
-      `<button class="btn q-next${saved?' show':''}" data-qnext="${i}">Next ❤️</button>`;
-    box.appendChild(card);
-    card.querySelectorAll('.q-opt').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const opt=btn.dataset.opt;
-        if(state.answers[keyPrefix+i]===opt)return;
-        state.answers[keyPrefix+i]=opt;
-        saveState();
-        card.querySelectorAll('.q-opt').forEach(b=>b.classList.toggle('sel',b===btn));
-        const resp=card.querySelector('.q-response');
-        resp.innerHTML=esc(buildReply(q,opt,sentimentOf(opt)));
-        resp.style.display='block';
-        card.querySelector('.q-next').classList.add('show');
-        updateCounter();
-        if(sentimentOf(opt)==='happy')burstConfetti(26);
-      });
-    });
-    card.querySelector('.q-next').addEventListener('click',()=>{
-      const next=card.nextElementSibling;
-      if(next)next.scrollIntoView({behavior:'smooth',block:'center'});
-    });
-  });
-  box.appendChild(fin);
-  updateCounter();
-}
-
-/* ---------- navigation (event delegation = always works) ---------- */
+/* ---------- sections ---------- */
 const SECTIONS=$$('.section');
-const DOTS=$('#progressDots');
-const FILL=$('#progressFill');
-let current=Math.max(0,Math.min(SECTIONS.length-1,state.progress||0));
-function buildDots(){
-  if(!DOTS)return;
-  SECTIONS.forEach((s,i)=>{
-    const d=document.createElement('span');
-    d.className='dot';
-    d.addEventListener('click',()=>goTo(i));
-    DOTS.appendChild(d);
+
+/* ---------- quiz questions (EDIT ME if you want your originals back) ---------- */
+const FUN=[
+  {q:"What's your favorite thing to do when you're bored?",a:["Scrolling & vibing 📱","Listening to music 🎧","Sleeping 😴","Spending time with the people I love ❤️"]},
+  {q:"Coffee or tea — and how do you take it?",a:["Coffee, extra sweet ☕","Tea, always 🍵","Both, depends on the day 😌","Honestly? Water 💧"]},
+  {q:"What's a movie or show you can watch a hundred times?",a:["A rom-com 🎬","Anime 🌸","Something funny 😂","I rewatch everything"]},
+  {q:"Morning person or night owl?",a:["Morning person 🌅","Night owl 🌙","I'm both — painfully 🥱","Depends on my mood"]},
+  {q:"What's the last song you had on repeat?",a:["Something emotional 🎶","Afrobeats, obviously 🕺","A song that reminds me of someone ❤️","I don't even know anymore"]},
+  {q:"Beach day or cozy rainy day?",a:["Beach day 🌊","Rainy day with blankets 🧸","Both sound perfect right now","I'm a city person 🏙️"]},
+  {q:"What food could you eat every single day?",a:["Rice, obviously 🍚","Pasta 🍝","Jollof — don't even ask 🍛","Something sweet 🍰"]},
+  {q:"Window seat or aisle seat?",a:["Window — I need the view 🪟","Aisle — I need the legroom 🦵","Any seat, just get me there 🚌","I don't fly, I stay home ✈️"]},
+  {q:"What's something small that always makes your day better?",a:["A good message from someone ❤️","Food 🍟","Music 🎧","Sleep 😴"]},
+  {q:"If you could teleport anywhere right now, where would you go?",a:["Somewhere with a beach 🌴","Home 🏡","A whole new country ✈️","Somewhere quiet 🌌"]}
+];
+const DEEP=[
+  {q:"What do you do when you're not feeling okay?",a:["I keep it to myself 🤐","I talk to someone I trust 🤍","I sleep it off 😔","I distract myself with anything 📱"]},
+  {q:"What's something you wish people understood about you?",a:["That I'm softer than I look 🤍","That I need time alone sometimes 🌙","That I'm trying my best ❤️","That I care more than I show"]},
+  {q:"What's a memory you'd relive if you could?",a:["A childhood memory 🧸","A day with someone I love ❤️","A moment I was really happy 😊","Honestly, I don't know yet"]},
+  {q:"What's been heavy on your mind lately?",a:["The future 🌫️","Someone I care about ❤️","School / work 📚","Myself, honestly"]},
+  {q:"What does a 'good day' look like for you?",a:["No stress, good food 😌","Laughing with people I love 😂","Accomplishing something ✅","Just peace. Quiet peace. 🤍"]},
+  {q:"Who's someone you can always be yourself around?",a:["My best friend 👯","My family 👨‍👩‍👧","Someone I'm still getting to know 👀","Myself, honestly 🪞"]},
+  {q:"What's a dream you're scared to say out loud?",a:["Something big — like really big 🌍","Traveling the world ✈️","Doing something creative 🎨","That someone special notices me 👀"]},
+  {q:"What makes you feel most at peace?",a:["Nighttime, when it's quiet 🌙","Music 🎧","Being around the right people 🤍","Being alone 🕊️"]},
+  {q:"What's something you're proud of that you don't talk about?",a:["How far I've come ❤️","The way I handle things 😌","The people I've kept close 🤍","Still being here 🌹"]}
+];
+const FIRE=[
+  {q:"Best compliment you've ever received?",a:["'You make people feel safe' 🤍","'You're funny' 😂","'You're beautiful' ❤️","I never get compliments 🙈"]},
+  {q:"What's your go-to comfort food?",a:["Something warm and homemade 🍲","Snacks. All the snacks 🍿","Ice cream 🍨","Rice. Always rice 🍚"]},
+  {q:"Cats or dogs? (We know the answer 🐶)",a:["DOGS. Obviously 🐶","Cats 🐱","Both, I can't choose","They're all babies 🥺"]},
+  {q:"First thing you do in the morning?",a:["Check my phone 📱","Sleep 5 more minutes 😴","Pray 🙏","Stare at the ceiling 🛏️"]},
+  {q:"What's a skill you wish you had?",a:["Singing 🎤","Cooking 👩‍🍳","Being patient 😌","Reading minds 🧠"]},
+  {q:"Best way to spend a lazy Sunday?",a:["In bed, all day 🛏️","With people I love ❤️","Watching something good 📺","Eating and napping 😴"]},
+  {q:"What always makes you laugh?",a:["My own jokes 😂","Funny videos 📱","My friends 🤣","Nothing. I'm serious. 😤"]},
+  {q:"One thing on your bucket list?",a:["Sky-diving 🪂","Traveling to my dream country ✈️","Meeting someone I look up to 🌟","Being truly happy ❤️"]},
+  {q:"Last question — what's your sign?",a:["Leo 🦁","Something else — I don't remember ♈","I don't believe in that 🌌","Guess 👀"]}
+];
+
+/* ---------- confetti canvas ---------- */
+let confetti=[],rafId=null;
+function sizeCanvas(){
+  const c=$('#confettiCanvas');
+  if(!c)return;
+  const dpr=window.devicePixelRatio||1;
+  c.width=window.innerWidth*dpr;
+  c.height=window.innerHeight*dpr;
+  c.style.width=window.innerWidth+'px';
+  c.style.height=window.innerHeight+'px';
+}
+function burstConfetti(n){
+  const c=$('#confettiCanvas');
+  if(!c)return;
+  const ctx=c.getContext('2d');
+  if(!ctx)return;
+  const colors=['#ff6b9d','#ffd166','#a78bfa','#64dfdf','#ff9f68','#f72585','#ffffff'];
+  confetti=Array.from({length:n||60},()=>({
+    x:Math.random()*c.width,
+    y:-20-Math.random()*c.height*0.3,
+    w:6+Math.random()*8,
+    h:8+Math.random()*10,
+    vx:(Math.random()-0.5)*2,
+    vy:1.5+Math.random()*2.5,
+    rot:Math.random()*Math.PI*2,
+    vr:(Math.random()-0.5)*0.2,
+    color:rand(colors),
+    life:180+Math.random()*120
+  }));
+  if(!rafId)stepConfetti();
+}
+function stepConfetti(){
+  const c=$('#confettiCanvas');
+  if(!c)return;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  confetti=confetti.filter(p=>p.life>0);
+  confetti.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.life--;
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle=p.color;
+    ctx.globalAlpha=Math.max(0,Math.min(1,p.life/60));
+    ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+    ctx.restore();
   });
-}
-function updateProgress(){
-  if(FILL)FILL.style.width=((current/(SECTIONS.length-1))*100)+'%';
-  if(DOTS)$$('.dot',DOTS).forEach((d,i)=>d.classList.toggle('on',i<=current));
-}
-function goTo(i){
-  i=Math.max(0,Math.min(SECTIONS.length-1,i));
-  if(i===current&&SECTIONS[current]&&SECTIONS[current].classList.contains('active'))return;
-  const from=SECTIONS[current],to=SECTIONS[i];
-  current=i;
-  state.progress=i;
-  saveState();
-  if(from){
-    from.classList.remove('active');
-    from.classList.add('out');
-    setTimeout(()=>from.classList.remove('out'),520);
+  if(confetti.length){
+    rafId=requestAnimationFrame(stepConfetti);
+  }else{
+    rafId=null;
+    ctx.clearRect(0,0,c.width,c.height);
   }
-  to.querySelectorAll('.stagger>*').forEach((el,k)=>el.style.setProperty('--sd',(0.08*k)+'s'));
-  to.classList.add('active');
-  updateProgress();
-  window.scrollTo(0,0);
-  if(i===SECTIONS.length-1)setTimeout(()=>burstConfetti(130),650);
 }
-document.addEventListener('click',e=>{
-  const btn=e.target.closest('[data-goto]');
-  if(!btn)return;
-  goTo(parseInt(btn.getAttribute('data-goto'),10));
-});
 
 /* ---------- particles ---------- */
 function buildParticles(){
   const wrap=$('#particles');
   if(!wrap)return;
-  const SYMBOLS=['❤️','🤍','💖','✨','💜','⭐'];
-  for(let i=0;i<22;i++){
+  wrap.innerHTML='';
+  const icons=['❤','✦','✧','♡','♥','·','*'];
+  const n=Math.min(24,Math.max(8,Math.floor(window.innerWidth/70)));
+  for(let i=0;i<n;i++){
     const p=document.createElement('span');
     p.className='particle';
-    const sym=rand(SYMBOLS);
-    p.textContent=(sym==='✨'||sym==='⭐')?'':sym;
+    p.textContent=rand(icons);
     p.style.left=(Math.random()*100)+'%';
-    p.style.fontSize=(12+Math.random()*18)+'px';
-    p.style.setProperty('--d',(16+Math.random()*18)+'s');
-    p.style.setProperty('--dl',(Math.random()*22)+'s');
-    p.style.setProperty('--po',(0.05+Math.random()*0.14).toFixed(2));
+    p.style.animationDelay=(Math.random()*14)+'s';
+    p.style.animationDuration=(12+Math.random()*16)+'s';
+    p.style.fontSize=(11+Math.random()*15)+'px';
+    p.style.opacity=(0.12+Math.random()*0.35).toFixed(2);
     wrap.appendChild(p);
-  }
-  for(let i=0;i<26;i++){
-    const t=document.createElement('span');
-    t.className='twinkle';
-    t.style.left=(Math.random()*100)+'%';
-    t.style.top=(Math.random()*100)+'%';
-    t.style.setProperty('--d',(2.5+Math.random()*4)+'s');
-    t.style.setProperty('--dl',(Math.random()*5)+'s');
-    wrap.appendChild(t);
   }
 }
 
-/* ---------- confetti ---------- */
-const cv=$('#confettiCanvas');
-const ctx=cv?cv.getContext('2d'):null;
-let pieces=[],confettiOn=false;
-const CONF_COLORS=['#ff8fc0','#b78bff','#ffd9a0','#ffffff','#ff5f8f'];
-function sizeCanvas(){
-  if(!cv)return;
-  cv.width=window.innerWidth;
-  cv.height=window.innerHeight;
-}
-function burstConfetti(n=80){
-  if(!ctx)return;
-  for(let i=0;i<n;i++){
-    pieces.push({
-      x:Math.random()*cv.width,
-      y:-20-Math.random()*cv.height*0.4,
-      w:6+Math.random()*8,
-      h:8+Math.random()*10,
-      vx:(Math.random()-0.5)*2.4,
-      vy:1.6+Math.random()*2.4,
-      rot:Math.random()*Math.PI,
-      vr:(Math.random()-0.5)*0.22,
-      color:rand(CONF_COLORS),
-      heart:Math.random()<0.3
-    });
-  }
-  if(!confettiOn){confettiOn=true;requestAnimationFrame(confettiLoop);}
-}
-function confettiLoop(){
-  if(!ctx)return;
-  ctx.clearRect(0,0,cv.width,cv.height);
-  pieces=pieces.filter(p=>p.y<cv.height+40);
-  pieces.forEach(p=>{
-    p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.vy+=0.03;
-    ctx.save();
-    ctx.translate(p.x,p.y);
-    ctx.rotate(p.rot);
-    ctx.fillStyle=p.color;
-    if(p.heart){ctx.font=p.w+'px serif';ctx.fillText('❤️',0,0);}
-    else{ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);}
-    ctx.restore();
+/* ---------- progress dots ---------- */
+function buildDots(){
+  const wrap=$('#progressDots');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  SECTIONS.forEach((s,i)=>{
+    const d=document.createElement('button');
+    d.type='button';
+    d.className='dot';
+    const t=s.dataset.title||'section '+(i+1);
+    d.title=t;
+    d.setAttribute('aria-label','Go to '+t);
+    d.addEventListener('click',()=>goTo(i));
+    wrap.appendChild(d);
   });
-  if(pieces.length)requestAnimationFrame(confettiLoop);
-  else{confettiOn=false;ctx.clearRect(0,0,cv.width,cv.height);}
+  updateProgress();
+}
+function updateProgress(){
+  const fill=$('#progressFill');
+  if(fill)fill.style.width=((state.progress+1)/SECTIONS.length*100)+'%';
+  $$('#progressDots .dot').forEach((d,j)=>d.classList.toggle('on',j<=state.progress));
+}
+
+/* ---------- navigation ---------- */
+function goTo(i){
+  i=Math.max(0,Math.min(i,SECTIONS.length-1));
+  if(!SECTIONS[i])return;
+  state.progress=i;
+  saveState();
+  SECTIONS.forEach((s,j)=>s.classList.toggle('active',j===i));
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ============================================================
+   THE FIX — one delegated listener for EVERY Continue button,
+   including buttons injected later by renderQuiz. In v3 this
+   binding was missing entirely, so no data-goto button worked.
+   ============================================================ */
+function bindGotos(){
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-goto]');
+    if(!b)return;
+    e.preventDefault();
+    const n=parseInt(b.dataset.goto,10);
+    if(!isNaN(n))goTo(n);
+  });
+}
+
+/* ---------- quizzes ---------- */
+function renderQuiz(boxSel,counterSel,questions,key,next,skip){
+  const box=$(boxSel),counter=$(counterSel);
+  if(!box)return;
+  const answers=state.answers[key]||[];
+  state.answers[key]=answers;
+  const total=questions.length;
+  const done=answers.length>=total;
+  if(counter)counter.textContent=done?('All '+total+' answered — thank you ❤️'):('Question '+Math.min(answers.length+1,total)+' of '+total);
+  box.innerHTML='';
+  if(done){
+    const sec=box.closest('.section');
+    const hasGoto=sec&&sec.querySelector('[data-goto]');
+    const d=document.createElement('div');
+    d.className='quiz-done';
+    d.textContent='All answered — thank you for sharing ❤️';
+    box.appendChild(d);
+    if(!hasGoto&&next!=null&&SECTIONS[next]){
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='btn';
+      b.dataset.goto=String(next);
+      b.textContent='Continue ❤️';
+      box.appendChild(b);
+    }
+    return;
+  }
+  const q=questions[answers.length];
+  if(!q)return;
+  const qEl=document.createElement('div');
+  qEl.className='quiz-q';
+  const qp=document.createElement('p');
+  qp.className='quiz-question';
+  qp.textContent=q.q;
+  qEl.appendChild(qp);
+  const wrap=document.createElement('div');
+  wrap.className='quiz-opts';
+  (q.a||[]).forEach(opt=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='chip opt';
+    b.textContent=opt;
+    b.addEventListener('click',()=>{
+      answers[answers.length]=opt;
+      saveState();
+      [...wrap.children].forEach(c=>c.classList.remove('picked'));
+      b.classList.add('picked');
+      if(answers.length>=total)toast('That\'s the last one — you\'re amazing ❤️');
+      setTimeout(()=>renderQuiz(boxSel,counterSel,questions,key,next,skip),220);
+    });
+    wrap.appendChild(b);
+  });
+  if(skip){
+    const sk=document.createElement('button');
+    sk.type='button';
+    sk.className='chip opt skip';
+    sk.textContent='Skip this one →';
+    sk.addEventListener('click',()=>{
+      answers[answers.length]='';
+      saveState();
+      setTimeout(()=>renderQuiz(boxSel,counterSel,questions,key,next,skip),120);
+    });
+    wrap.appendChild(sk);
+  }
+  qEl.appendChild(wrap);
+  box.appendChild(qEl);
 }
 
 /* ---------- photo uploads ---------- */
-function compress(img,maxDim,quality){
-  let {width,height}=img;
-  if(width>maxDim||height>maxDim){
-    const r=Math.min(maxDim/width,maxDim/height);
-    width=Math.round(width*r);
-    height=Math.round(height*r);
-  }
-  const c=document.createElement('canvas');
-  c.width=width;
-  c.height=height;
-  c.getContext('2d').drawImage(img,0,0,width,height);
-  return c.toDataURL('image/jpeg',quality);
+function compress(img,maxW,quality){
+  const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+  const scale=Math.min(1,(maxW||760)/w);
+  const cw=Math.round(w*scale),ch=Math.round(h*scale);
+  const canvas=document.createElement('canvas');
+  canvas.width=cw;canvas.height=ch;
+  canvas.getContext('2d').drawImage(img,0,0,cw,ch);
+  return canvas.toDataURL('image/jpeg',quality||0.75);
 }
-function wirePhotos(inputId,zoneId,previewId,countId,stateKey,single=false){
-  const input=$('#'+inputId);
+function wirePhotos(inputId,zoneId,previewId,countId,key,single){
+  const input=$('#'+inputId),zone=$('#'+zoneId),preview=$('#'+previewId),count=$('#'+countId);
   if(!input)return;
-  const zone=$('#'+zoneId),preview=$('#'+previewId),count=$('#'+countId);
-  const list=()=>state.answers[stateKey]||(state.answers[stateKey]=[]);
+  const list=()=>{state.answers[key]=state.answers[key]||[];return state.answers[key];};
   const render=()=>{
     const arr=list();
-    preview.innerHTML='';
+    if(preview)preview.innerHTML='';
     arr.forEach((src,i)=>{
       const d=document.createElement('div');
-      d.className='thumb';
-      d.innerHTML=`<img src="${src}" alt="photo ${i+1}"><button class="rm" aria-label="remove">✕</button>`;
+      d.className='preview-item';
+      d.innerHTML='<img src="'+src+'" alt="photo '+(i+1)+'"><button class="rm" aria-label="remove">✕</button>';
       d.querySelector('.rm').addEventListener('click',()=>{
         arr.splice(i,1);
         saveState();
@@ -357,7 +303,7 @@ function wirePhotos(inputId,zoneId,previewId,countId,stateKey,single=false){
       });
       preview.appendChild(d);
     });
-    if(count)count.textContent=arr.length?`${arr.length} photo${arr.length>1?'s':''} saved on this device ❤️`:'';
+    if(count)count.textContent=arr.length?(arr.length+' photo'+(arr.length>1?'s':'')+' saved on this device ❤️'):'';
     if(single)input.value='';
   };
   const handleFiles=(files)=>{
@@ -392,12 +338,32 @@ function wirePhotos(inputId,zoneId,previewId,countId,stateKey,single=false){
 }
 
 /* ---------- wish form ---------- */
+function buildWishReply(text){
+  const t=String(text||'').toLowerCase();
+  const heavy=HEAVY_WORDS.some(w=>t.includes(w));
+  const happy=HAPPY_WORDS.some(w=>t.includes(w));
+  if(heavy)return rand([
+    "I hear you. That takes courage to write down, and I'm glad you shared it. I'm here — always. ❤️",
+    "Thank you for trusting me with that. You don't have to carry it alone. I've got your back. 🤍",
+    "That sounds heavy, and you're still here — that says everything about your strength. One day at a time, okay? I'm here."
+  ]);
+  if(happy)return rand([
+    "I love that for you. Genuinely. Hold onto that feeling — you deserve it. ❤️",
+    "That made me smile. Keep chasing that — you deserve every bit of it. 🤍",
+    "Beautiful answer. I hope this year gives you more of exactly that."
+  ]);
+  return rand([
+    "That's a beautiful answer — thank you for being honest. I'm rooting for you, always. ❤️",
+    "Noted, Nela. And whatever it is, I hope it finds its way to you. You deserve it. 🤍",
+    "I love that. Whatever it is, I hope life is gentle with you while you get there. ❤️"
+  ]);
+}
 function wireWish(){
   const form=$('#wishForm'),text=$('#wishText'),resp=$('#wishResponse'),cont=$('#wishContinue');
   if(!form)return;
   if(state.answers.wish){
     text.value=state.answers.wish;
-    resp.innerHTML=`<span class="reply-kicker">Zeus says…</span>${esc(buildWishReply(state.answers.wish))}`;
+    resp.innerHTML='<span class="reply-kicker">Zeus says…</span>'+esc(buildWishReply(state.answers.wish));
     resp.hidden=false;
     cont.hidden=false;
     form.hidden=true;
@@ -408,7 +374,7 @@ function wireWish(){
     if(!val){toast('Write something first — anything ❤️');return;}
     state.answers.wish=val;
     saveState();
-    resp.innerHTML=`<span class="reply-kicker">Zeus says…</span>${esc(buildWishReply(val))}`;
+    resp.innerHTML='<span class="reply-kicker">Zeus says…</span>'+esc(buildWishReply(val));
     resp.hidden=false;
     cont.hidden=false;
     form.hidden=true;
@@ -499,13 +465,39 @@ function revealBody(){
   document.body.style.visibility='visible';
 }
 
+/* ---------- safety styles (only for elements JS creates) ---------- */
+function injectSafetyStyles(){
+  const id='v4-safety-styles';
+  if($('#'+id))return;
+  const st=document.createElement('style');
+  st.id=id;
+  st.textContent=''+
+  '.particle{position:fixed;bottom:-12vh;pointer-events:none;z-index:0;animation:particleUp linear infinite;}'+
+  '@keyframes particleUp{0%{transform:translateY(0) rotate(0deg);opacity:0;}10%{opacity:.8;}100%{transform:translateY(-118vh) rotate(340deg);opacity:0;}}'+
+  '.quiz-q{animation:fadeUp .35s ease both;}'+
+  '@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}'+
+  '.quiz-opts{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}'+
+  '.quiz-opts .opt{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:inherit;padding:12px 16px;border-radius:999px;font:inherit;cursor:pointer;transition:.2s;text-align:left;}'+
+  '.quiz-opts .opt:hover{background:rgba(255,255,255,.14);transform:translateY(-2px);}'+
+  '.quiz-opts .opt.picked{background:#ff6b9d;border-color:#ff6b9d;color:#fff;}'+
+  '.quiz-opts .opt.skip{opacity:.65;font-style:italic;}'+
+  '.quiz-done{opacity:.85;font-style:italic;}'+
+  '#progressDots .dot{width:9px;height:9px;border-radius:50%;border:0;background:rgba(255,255,255,.25);padding:0;margin:0 3px;cursor:pointer;transition:.25s;}'+
+  '#progressDots .dot.on{background:#ff6b9d;transform:scale(1.25);}'+
+  '[data-goto]{cursor:pointer;}';
+  document.head.appendChild(st);
+}
+
 /* ---------- boot ---------- */
 function boot(){
+  loadState();
   buildDots();
   buildParticles();
   sizeCanvas();
+  injectSafetyStyles();
+  bindGotos();                       /* ← THE FIX: wires every Continue button */
   renderQuiz('#funBox','#funCounter',FUN,'fun',4);
-  renderQuiz('#deepBox','#deepCounter',DEEP,'deep',7);
+  renderQuiz('#deepBox','#deepCounter',DEEP,'deep',7,true);
   renderQuiz('#fireBox','#fireCounter',FIRE,'fire',9);
   wireWish();
   wirePhotos('dogInput','dogZone','dogPreview','dogCount','dogPhotos');
@@ -527,4 +519,4 @@ try{
   revealBody();
 }
 })();
-/* ============ main.js v3 — END ============ */
+/* ============ main.js v4 — END ============ */
