@@ -1,10 +1,9 @@
 /* ============================================================
-   main.js v4 — for Nela ❤️
-   FIXED: Continue / answer buttons now actually respond.
-   Root cause of the v3 bug: bindGotos() was removed from boot(),
-   so every [data-goto] button rendered but had no click handler.
-   v4 binds them with event delegation — works for static AND
-   dynamically injected buttons. Answer chips are also re-wired.
+   main.js v5 — for Nela ❤️
+   FIXED: "That's my answer ❤️" button now works in every case
+   (type=submit, type=button, inside or outside the form).
+   Every feature is isolated in its own try/catch so one
+   failure can never break the rest of the site.
    ============================================================ */
 (()=>{
 'use strict';
@@ -20,6 +19,8 @@ let toastTimer=null;
 function toast(msg,ms=2600){const el=$('#toast');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),ms);}
 const rand=a=>a[Math.floor(Math.random()*a.length)];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* run a boot step in its own bubble — one failure never kills the rest */
+const safe=(label,fn)=>{try{fn();}catch(err){console.error('['+label+'] failed:',err);}};
 
 /* ---------- sentiment ---------- */
 const HEAVY_WORDS=['sad','tired','alone','lonely','cry','crying','hurt','pain','scared','afraid','anxious','anxiety','stress','stressed','overwhelmed','broken','lost','empty','worried','worry','depressed','heavy','exhausted','fail','failed','giving','hate','angry','regret','miss','missing','hard','difficult','struggle','struggling','unhappy','numb','hopeless','worthless','weak','trapped','stuck','fine pretending','tired of'];
@@ -47,7 +48,7 @@ function saveState(){
 /* ---------- sections ---------- */
 const SECTIONS=$$('.section');
 
-/* ---------- quiz questions (EDIT ME if you want your originals back) ---------- */
+/* ---------- quiz questions ---------- */
 const FUN=[
   {q:"What's your favorite thing to do when you're bored?",a:["Scrolling & vibing 📱","Listening to music 🎧","Sleeping 😴","Spending time with the people I love ❤️"]},
   {q:"Coffee or tea — and how do you take it?",a:["Coffee, extra sweet ☕","Tea, always 🍵","Both, depends on the day 😌","Honestly? Water 💧"]},
@@ -192,11 +193,7 @@ function goTo(i){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-/* ============================================================
-   THE FIX — one delegated listener for EVERY Continue button,
-   including buttons injected later by renderQuiz. In v3 this
-   binding was missing entirely, so no data-goto button worked.
-   ============================================================ */
+/* ---------- delegated Continue binding (works for every button, static or injected) ---------- */
 function bindGotos(){
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-goto]');
@@ -337,7 +334,13 @@ function wirePhotos(inputId,zoneId,previewId,countId,key,single){
   render();
 }
 
-/* ---------- wish form ---------- */
+/* ============================================================
+   THE "That's my answer ❤️" BUTTON FIX.
+   v4 only listened for the form's submit event — if the button
+   is type="button", or sits outside the <form>, clicks did
+   nothing. v5 binds EVERY button inside the wish section, so
+   it works no matter how the HTML is structured.
+   ============================================================ */
 function buildWishReply(text){
   const t=String(text||'').toLowerCase();
   const heavy=HEAVY_WORDS.some(w=>t.includes(w));
@@ -359,28 +362,45 @@ function buildWishReply(text){
   ]);
 }
 function wireWish(){
-  const form=$('#wishForm'),text=$('#wishText'),resp=$('#wishResponse'),cont=$('#wishContinue');
-  if(!form)return;
-  if(state.answers.wish){
-    text.value=state.answers.wish;
-    resp.innerHTML='<span class="reply-kicker">Zeus says…</span>'+esc(buildWishReply(state.answers.wish));
-    resp.hidden=false;
-    cont.hidden=false;
-    form.hidden=true;
-  }
-  form.addEventListener('submit',e=>{
-    e.preventDefault();
+  const text=$('#wishText');
+  if(!text)return;                                  // no textarea → nothing to do
+  const form=$('#wishForm'),resp=$('#wishResponse'),cont=$('#wishContinue');
+  const sec=text.closest('.section');
+  let busy=false;
+  const submit=()=>{
+    if(busy)return;                                 // guard against double-fire
     const val=text.value.trim();
-    if(!val){toast('Write something first — anything ❤️');return;}
+    if(!val){toast('Write something first — anything ❤️');text.focus();return;}
+    busy=true;
     state.answers.wish=val;
     saveState();
-    resp.innerHTML='<span class="reply-kicker">Zeus says…</span>'+esc(buildWishReply(val));
-    resp.hidden=false;
-    cont.hidden=false;
-    form.hidden=true;
+    if(resp){
+      resp.innerHTML='<span class="reply-kicker">Zeus says…</span>'+esc(buildWishReply(val));
+      resp.hidden=false;
+    }
+    if(cont)cont.hidden=false;
+    if(form)form.hidden=true;
     burstConfetti(40);
-    resp.scrollIntoView({behavior:'smooth',block:'center'});
+    if(resp)resp.scrollIntoView({behavior:'smooth',block:'center'});
+  };
+  /* 1) normal form submit (button type=submit / Enter key) */
+  if(form)form.addEventListener('submit',e=>{e.preventDefault();submit();});
+  /* 2) direct clicks on ANY button in this section (covers type="button" and buttons outside the form) */
+  if(sec)sec.querySelectorAll('button').forEach(b=>{
+    if(b.id==='wishContinue')return;                // Continue is handled by data-goto
+    if(b.hasAttribute('data-goto'))return;
+    b.addEventListener('click',e=>{e.preventDefault();submit();});
   });
+  /* 3) restore a previously saved answer */
+  if(state.answers.wish){
+    text.value=state.answers.wish;
+    if(resp){
+      resp.innerHTML='<span class="reply-kicker">Zeus says…</span>'+esc(buildWishReply(state.answers.wish));
+      resp.hidden=false;
+    }
+    if(cont)cont.hidden=false;
+    if(form)form.hidden=true;
+  }
 }
 
 /* ---------- voice (speechSynthesis) ---------- */
@@ -488,24 +508,24 @@ function injectSafetyStyles(){
   document.head.appendChild(st);
 }
 
-/* ---------- boot ---------- */
+/* ---------- boot (every step isolated so nothing can break the rest) ---------- */
 function boot(){
-  loadState();
-  buildDots();
-  buildParticles();
-  sizeCanvas();
-  injectSafetyStyles();
-  bindGotos();                       /* ← THE FIX: wires every Continue button */
-  renderQuiz('#funBox','#funCounter',FUN,'fun',4);
-  renderQuiz('#deepBox','#deepCounter',DEEP,'deep',7,true);
-  renderQuiz('#fireBox','#fireCounter',FIRE,'fire',9);
-  wireWish();
-  wirePhotos('dogInput','dogZone','dogPreview','dogCount','dogPhotos');
-  wirePhotos('selfieInput','selfieZone','selfiePreview','selfieCount','selfie',true);
-  wireVoice();
-  wireWa();
-  wireRestart();
-  goTo(state.progress||0);
+  safe('loadState',loadState);
+  safe('dots',buildDots);
+  safe('particles',buildParticles);
+  safe('canvas',sizeCanvas);
+  safe('styles',injectSafetyStyles);
+  safe('gotos',bindGotos);
+  safe('quiz-fun',()=>renderQuiz('#funBox','#funCounter',FUN,'fun',4));
+  safe('quiz-deep',()=>renderQuiz('#deepBox','#deepCounter',DEEP,'deep',7,true));
+  safe('quiz-fire',()=>renderQuiz('#fireBox','#fireCounter',FIRE,'fire',9));
+  safe('wish',wireWish);
+  safe('photos-dog',()=>wirePhotos('dogInput','dogZone','dogPreview','dogCount','dogPhotos'));
+  safe('photos-selfie',()=>wirePhotos('selfieInput','selfieZone','selfiePreview','selfieCount','selfie',true));
+  safe('voice',wireVoice);
+  safe('whatsapp',wireWa);
+  safe('restart',wireRestart);
+  safe('goto',()=>goTo(state.progress||0));
   window.addEventListener('resize',sizeCanvas);
   window.addEventListener('error',()=>revealBody());
 }
@@ -519,4 +539,4 @@ try{
   revealBody();
 }
 })();
-/* ============ main.js v4 — END ============ */
+/* ============ main.js v5 — END ============ */
