@@ -1,256 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0c0816" />
-  <title>For Nela ❤️</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Quicksand:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0c0816" />
+<meta http-equiv="cache-control" content="no-cache" />
+<title>For Nela ❤️</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Quicksand:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
 
-  <!-- Ambient glow blobs -->
-  <div class="glow glow-a" aria-hidden="true"></div>
-  <div class="glow glow-b" aria-hidden="true"></div>
+<div class="glow glow-a" aria-hidden="true"></div>
+<div class="glow glow-b" aria-hidden="true"></div>
+<div id="particles" aria-hidden="true"></div>
+<canvas id="confettiCanvas" aria-hidden="true"></canvas>
 
-  <!-- Floating hearts / sparkles -->
-  <div id="particles" aria-hidden="true"></div>
+<div id="welcomeOverlay" aria-hidden="true">
+  <span class="overlay-heart">❤️</span>
+  <span class="overlay-text">for Nela</span>
+</div>
 
-  <!-- Confetti canvas -->
-  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-dots" id="progressDots"></div>
+</div>
 
-  <!-- Welcome splash -->
-  <div id="welcomeOverlay" aria-hidden="true">
-    <span class="overlay-heart">❤️</span>
-    <span class="overlay-text">for Nela</span>
-  </div>
+<div class="toast" id="toast" role="status"></div>
 
-  <!-- Progress indicator -->
-  <div class="progress-wrap">
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-    <div class="progress-dots" id="progressDots"></div>
-  </div>
+<main id="app">
 
-  <!-- Toast -->
-  <div class="toast" id="toast" role="status"></div>
+  <!-- 1 · INTRO -->
+  <section class="section" id="sec0" data-title="the beginning">
+    <div class="inner stagger">
+      <h1 class="title-hero">HEY NELA <span class="heartbeat">❤️</span></h1>
+      <p class="kicker">Before you continue…</p>
+      <p>Someone took the time to make something small — just for you. Nothing complicated. Just a few quiet minutes, a few questions, and a lot of care.</p>
+      <p>So take your time. There's no rush here, and there's no wrong way to go through it.</p>
+      <p>When you're ready…</p>
+      <button class="btn" data-goto="1">Continue ❤️</button>
+    </div>
+  </section>
 
-  <main id="app">
+  <!-- 2 · BIRTHDAY -->
+  <section class="section" id="sec1" data-title="her birthday">
+    <div class="inner stagger">
+      <p class="kicker">August 12</p>
+      <h2 class="title-hand">Happy Birthday, Nela <span class="heartbeat">❤️</span></h2>
+      <p class="lead">August 12 isn't just another date. It's the day someone special came into this world.</p>
+      <p>Another year around the sun. I hope this one is softer to you than the ones before — I hope it brings you peace on the days you need it, laughter on the days you can't find it, and people who stay when it matters.</p>
+      <p>You deserve happiness — not the loud, perfect kind, but the quiet, real kind. The kind you can hold onto on ordinary days. You deserve good memories, genuine people around you, and beautiful things in life. Not as a reward for being strong. Just because you exist.</p>
+      <p>I don't know what this past year looked like for you, and I won't pretend I do. But I know what I hope for you: that whatever felt heavy gets lighter, and whatever made you smile happens more often.</p>
+      <div class="birthday-burst" aria-hidden="true">🎂 ✨ 🎈</div>
+      <p class="ask">Ready for the next part?</p>
+      <button class="btn" data-goto="2">Continue ❤️</button>
+    </div>
+  </section>
 
-    <!-- ═══════════ PAGE 1 — INTRO ═══════════ -->
-    <section class="section" id="sec0" data-title="the beginning">
-      <div class="inner stagger">
-        <h1 class="title-hero">HEY NELA <span class="heartbeat">❤️</span></h1>
-        <p class="kicker">Before you continue…</p>
-        <p>Someone took the time to make something small — just for you. Nothing complicated. Just a few quiet minutes, a few questions, and a lot of care.</p>
-        <p>So take your time. There's no rush here, and there's no wrong way to go through it.</p>
-        <p>When you're ready…</p>
-        <button class="btn btn-primary" data-goto="1">Continue ❤️</button>
+  <!-- 3 · DOGS -->
+  <section class="section" id="sec2" data-title="the dog question">
+    <div class="inner stagger">
+      <h2 class="title-hand">I found out you love dogs 🐶❤️</h2>
+      <p>Okay, instant respect. That tells me everything I need to know about you.</p>
+      <p>So… can you share some photos with the dogs? Drop them below. I just want to see them. Yes, I'll judge the dogs. Gently. They're all good.</p>
+      <label class="upload-zone" id="dogZone" for="dogInput">
+        <input type="file" id="dogInput" accept="image/*" multiple hidden />
+        <span class="upload-icon">📸</span>
+        <span class="upload-title">Tap to choose photos</span>
+        <span class="upload-sub">One or more — your favorite dogs, please 🐶</span>
+      </label>
+      <div class="preview-grid" id="dogPreview"></div>
+      <p class="note" id="dogCount"></p>
+      <p class="note"><span class="lock">🔒</span> Your photos stay on your phone. Nothing gets uploaded anywhere — they're just part of the little experience here, shown only to you.</p>
+      <button class="btn" data-goto="3">Continue ❤️</button>
+    </div>
+  </section>
+
+  <!-- 4 · FUN QUESTIONS -->
+  <section class="section" id="sec3" data-title="fun questions">
+    <div class="inner">
+      <div class="stagger">
+        <h2 class="title-hand">Okay, let's actually get to know you 👀</h2>
+        <p>A few small questions. Answer however you feel — there's no wrong answer, and no judging. Well… a little judging. Kindly. 😂</p>
       </div>
-    </section>
+      <div class="chip" id="funCounter"></div>
+      <div id="funBox"></div>
+    </div>
+  </section>
 
-    <!-- ═══════════ PAGE 2 — HER BIRTHDAY ═══════════ -->
-    <section class="section" id="sec1" data-title="her birthday">
-      <div class="inner stagger">
-        <p class="kicker">August 12</p>
-        <h2 class="title-hand">Happy Birthday, Nela <span class="heartbeat">❤️</span></h2>
-        <p class="lead">August 12 isn't just another date. It's the day someone special came into this world.</p>
-        <p>Another year around the sun. I hope this one is softer to you than the ones before — I hope it brings you peace on the days you need it, laughter on the days you can't find it, and people who stay when it matters.</p>
-        <p>You deserve happiness — not the loud, perfect kind, but the quiet, real kind. The kind you can hold onto on ordinary days. You deserve good memories, genuine people around you, and beautiful things in life. Not as a reward for being strong. Just because you exist.</p>
-        <p>I don't know what this past year looked like for you, and I won't pretend I do. But I know what I hope for you: that whatever felt heavy gets lighter, and whatever made you smile happens more often.</p>
-        <div class="birthday-burst" aria-hidden="true">🎂 ✨ 🎈</div>
-        <p class="ask">Ready for the next part?</p>
-        <button class="btn btn-primary" data-goto="2">Continue ❤️</button>
+  <!-- 5 · INSPIRATIONAL -->
+  <section class="section" id="sec4" data-title="inspirational words">
+    <div class="inner">
+      <div class="inspire-card stagger">
+        <p class="kicker">a small pause</p>
+        <h2 class="title-hand">Before we continue, I want you to remember something.</h2>
+        <div class="msg-list">
+          <p class="msg-item"><span class="mark">✦</span>Don't give up — not today, not on yourself. You've made it through every hard day so far, and that's proof you can keep going.</p>
+          <p class="msg-item"><span class="mark">✦</span>Difficult days don't last forever. They feel endless while you're in them, but they pass. They always pass.</p>
+          <p class="msg-item"><span class="mark">✦</span>Your value was never up for debate. Not on your best day, and definitely not on your worst.</p>
+          <p class="msg-item"><span class="mark">✦</span>You're allowed to rest. Rest isn't something you earn — you can stop just because you're tired.</p>
+          <p class="msg-item"><span class="mark">✦</span>You don't have to have it all figured out. Nobody does. It's okay to be figuring it out as you go.</p>
+          <p class="msg-item"><span class="mark">✦</span>Choose yourself. Not in a selfish way — in an "I matter too" way.</p>
+          <p class="msg-item"><span class="mark">✦</span>There are people who genuinely care about you. Maybe more than you realize. You are not invisible.</p>
+          <p class="msg-item"><span class="mark">✦</span>One bad chapter doesn't define your whole story. You're still writing it.</p>
+        </div>
+        <blockquote class="quote-card">
+          <span class="quote-mark">"</span>
+          You don't have to have everything figured out today. Sometimes making it through today is already enough.
+        </blockquote>
+        <button class="btn" data-goto="5">Continue ❤️</button>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- ═══════════ PAGE 3 — THE DOG QUESTION ═══════════ -->
-    <section class="section" id="sec2" data-title="the dog question">
-      <div class="inner stagger">
-        <h2 class="title-hand">I found out you love dogs 🐶❤️</h2>
-        <p>Okay, instant respect. That tells me everything I need to know about you.</p>
-        <p>So… can you share some photos with the dogs? Drop them below. I just want to see them. Yes, I'll judge the dogs. Gently. They're all good.</p>
+  <!-- 6 · THE WISH -->
+  <section class="section" id="sec5" data-title="the wish">
+    <div class="inner stagger">
+      <h2 class="title-hand">Now I want you to answer something honestly.</h2>
+      <p class="ask">If life permits it, what's one thing you genuinely want for yourself?</p>
+      <div class="wish-form" id="wishForm">
+        <textarea id="wishText" rows="5" placeholder="Write it here — freely, honestly…" aria-label="Your wish"></textarea>
+        <p class="note">There's no wrong answer. Write as little or as much as you want.</p>
+        <button class="btn" id="wishSubmit">That's my answer ❤️</button>
+      </div>
+      <div class="response" id="wishResponse" hidden></div>
+      <button class="btn" data-goto="6" id="wishContinue" hidden>Continue ❤️</button>
+    </div>
+  </section>
 
-        <label class="upload-zone" id="dogZone" for="dogInput">
-          <input type="file" id="dogInput" accept="image/*" multiple hidden />
-          <span class="upload-icon">📸</span>
-          <span class="upload-title">Tap to choose photos</span>
-          <span class="upload-sub">One or more — your favorite dogs, please 🐶</span>
+  <!-- 7 · DEEPER QUESTIONS -->
+  <section class="section" id="sec6" data-title="deeper questions">
+    <div class="inner">
+      <div class="stagger">
+        <h2 class="title-hand">Let's go a little deeper…</h2>
+        <p>Only the questions you feel comfortable with — you can skip any of them. I'll be here, reading everything. 🤍</p>
+      </div>
+      <div class="chip" id="deepCounter"></div>
+      <div id="deepBox"></div>
+    </div>
+  </section>
+
+  <!-- 8 · ABOUT ZEUS -->
+  <section class="section" id="sec7" data-title="about Zeus">
+    <div class="inner stagger">
+      <h2 class="title-hand">You already know me… <span class="zeus-name">Zeus.</span></h2>
+      <p>Hi. In case you forgot who was behind all of this — it's me.</p>
+      <p>I made this because I wanted to give you something different. Not another "happy birthday" text that disappears in five minutes — something you could actually feel. Something that stays.</p>
+      <p>The truth is, I just want to make you smile. That's genuinely it. Nothing complicated, nothing hidden.</p>
+      <p>And if you ever need someone to talk to, laugh with, or simply hang around with — I'd rather be that person who actually makes time for you. Not someone who shows up once in a while. The one who shows up.</p>
+      <p class="soft-line">"I'll always try to make time for you." That's a promise I actually intend to keep.</p>
+      <button class="btn" data-goto="8">Continue ❤️</button>
+    </div>
+  </section>
+
+  <!-- 9 · RAPID FIRE -->
+  <section class="section" id="sec8" data-title="rapid fire">
+    <div class="inner">
+      <div class="stagger">
+        <h2 class="title-hand">Rapid fire ⚡</h2>
+        <p>No overthinking — first thing that comes to mind. I'll try to keep up 😂</p>
+      </div>
+      <div class="chip" id="fireCounter"></div>
+      <div id="fireBox"></div>
+    </div>
+  </section>
+
+  <!-- 10 · FINAL MESSAGE -->
+  <section class="section" id="sec9" data-title="the final message">
+    <div class="inner">
+      <div class="stagger final-head">
+        <h1 class="title-hero">Hey Kagura ❤️</h1>
+        <p class="kicker">You already know me.</p>
+        <p class="zeus-signature">Zeus.</p>
+      </div>
+
+      <div class="final-text stagger" id="finalText">
+        <p>By now you've made it through all of it — the questions, the wishes, the little detours. And honestly? I thought you might just open this, look around for two seconds and snub me 😂❤️</p>
+        <p>I had sleepless nights coding and putting all of this together, because I wanted to make something that would actually make you smile. Not a perfect website — just something made with real care, by someone who genuinely cares about you.</p>
+        <p>I really hope you feel much better after going through this. Whatever you wrote, wherever your head is at — I hope at least one line in here felt like a small hug.</p>
+        <p>I don't know everything about your life, and I won't pretend I do. But I know what I wish for you: peace on the loud days, laughter on the hard ones, and people who stay even when staying would be easier to skip.</p>
+        <p>I wish you strength — not the kind you have to fake, but the quiet kind that carries you through one more day. And a future you can be proud of, built out of memories you actually want to keep.</p>
+        <p>You deserve happiness. You deserve good people, beautiful memories, and a life that feels soft to you. Not because you proved anything — just because you're you.</p>
+        <p>Whatever kind of day you're having, I hope tomorrow gives you another reason to smile.</p>
+        <p>Take care of yourself, Nela. Please. ❤️</p>
+      </div>
+
+      <div class="final-block stagger">
+        <h3 class="title-hand">One last thing…</h3>
+        <p>Can you send me a photo of yourself? ❤️</p>
+        <p class="note">Only if you want to. No pressure at all — I just think it would be nice to finally see you.</p>
+        <label class="upload-zone" id="selfieZone" for="selfieInput">
+          <input type="file" id="selfieInput" accept="image/*" hidden />
+          <span class="upload-icon">🫶</span>
+          <span class="upload-title">Choose your photo</span>
+          <span class="upload-sub">Just one — the one you like most</span>
         </label>
-
-        <div class="preview-grid" id="dogPreview"></div>
-        <p class="note" id="dogCount"></p>
-        <p class="note"><span class="lock">🔒</span> Your photos stay on your phone. Nothing gets uploaded anywhere — they're just part of the little experience here, shown only to you.</p>
-
-        <button class="btn btn-primary" data-goto="3">Continue ❤️</button>
+        <div class="preview-grid single" id="selfiePreview"></div>
+        <p class="note" id="selfieCount"></p>
+        <button class="btn btn-whatsapp" id="waBtn">📲 Send Photo to Zeus ❤️</button>
+        <p class="note honest-note" id="waNote">
+          <span class="lock">🔒</span> Honest note: a website can't secretly send a photo to WhatsApp by itself — that needs a server. So this button opens WhatsApp with a message already written for me. Once it opens, tap the 📎 and attach the photo you picked, then press send. Nothing gets sent unless you send it — that part is yours ❤️
+        </p>
       </div>
-    </section>
 
-    <!-- ═══════════ PAGE 4 — FUN QUESTIONS ═══════════ -->
-    <section class="section" id="sec3" data-title="fun questions">
-      <div class="inner">
-        <div class="stagger">
-          <h2 class="title-hand">Okay, let's actually get to know you 👀</h2>
-          <p>A few small questions. Answer however you feel — there's no wrong answer, and no judging. Well… a little judging. Kindly. 😂</p>
+      <div class="final-block stagger voice-box" id="voiceBox">
+        <h3 class="title-hand">One more thing… 🔊</h3>
+        <p>Want me to read the whole message to you? I'm told my voice is decent 😌 (It's your browser's voice, technically — but the words are mine.)</p>
+        <div class="voice-controls">
+          <button class="btn" id="voicePlay">🔊 Listen to Zeus</button>
+          <button class="btn btn-ghost" id="voicePause" disabled>⏸ Pause</button>
+          <button class="btn btn-ghost" id="voiceResume" disabled>▶️ Resume</button>
+          <button class="btn btn-ghost" id="voiceStop" disabled>⏹ Stop</button>
         </div>
-        <div class="chip" id="funCounter"></div>
-        <div id="funBox"></div>
+        <p class="note" id="voiceStatus" role="status"></p>
+        <p class="note" id="voiceFallback" hidden>Your browser doesn't support voice playback, but you can still read the message ❤️</p>
       </div>
-    </section>
 
-    <!-- ═══════════ PAGE 5 — INSPIRATIONAL WORDS ═══════════ -->
-    <section class="section" id="sec4" data-title="inspirational words">
-      <div class="inner">
-        <div class="inspire-card stagger">
-          <p class="kicker">a small pause</p>
-          <h2 class="title-hand">Before we continue, I want you to remember something.</h2>
-          <div class="msg-list">
-            <p class="msg-item"><span class="mark">✦</span>Don't give up — not today, not on yourself. You've made it through every hard day so far, and that's proof you can keep going.</p>
-            <p class="msg-item"><span class="mark">✦</span>Difficult days don't last forever. They feel endless while you're in them, but they pass. They always pass.</p>
-            <p class="msg-item"><span class="mark">✦</span>Your value was never up for debate. Not on your best day, and definitely not on your worst.</p>
-            <p class="msg-item"><span class="mark">✦</span>You're allowed to rest. Rest isn't something you earn — you can stop just because you're tired.</p>
-            <p class="msg-item"><span class="mark">✦</span>You don't have to have it all figured out. Nobody does. It's okay to be figuring it out as you go.</p>
-            <p class="msg-item"><span class="mark">✦</span>Choose yourself. Not in a selfish way — in an "I matter too" way.</p>
-            <p class="msg-item"><span class="mark">✦</span>There are people who genuinely care about you. Maybe more than you realize. You are not invisible.</p>
-            <p class="msg-item"><span class="mark">✦</span>One bad chapter doesn't define your whole story. You're still writing it.</p>
-          </div>
-          <blockquote class="quote-card">
-            <span class="quote-mark">"</span>
-            You don't have to have everything figured out today. Sometimes making it through today is already enough.
-          </blockquote>
-          <button class="btn btn-primary" data-goto="5">Continue ❤️</button>
-        </div>
-      </div>
-    </section>
+      <footer class="final-foot stagger">
+        <p class="made-with">Made with ❤️ and too many late nights, by Zeus</p>
+        <button class="link-btn" id="restartLink">Start over from the beginning ↺</button>
+      </footer>
+    </div>
+  </section>
 
-    <!-- ═══════════ PAGE 6 — THE WISH ═══════════ -->
-    <section class="section" id="sec5" data-title="the wish">
-      <div class="inner stagger">
-        <h2 class="title-hand">Now I want you to answer something honestly.</h2>
-        <p class="ask">If life permits it, what's one thing you genuinely want for yourself?</p>
+</main>
 
-        <div class="wish-form" id="wishForm">
-          <textarea id="wishText" rows="5" placeholder="Write it here — freely, honestly…" aria-label="Your wish"></textarea>
-          <p class="note">There's no wrong answer. Write as little or as much as you want.</p>
-          <button class="btn btn-primary" id="wishSubmit">That's my answer ❤️</button>
-        </div>
+<noscript><p style="color:#fff;text-align:center;padding:40px 20px;font-family:sans-serif;">Please enable JavaScript to see this ❤️</p></noscript>
 
-        <div class="response" id="wishResponse" hidden></div>
-        <button class="btn btn-primary" data-goto="6" id="wishContinue" hidden>Continue ❤️</button>
-      </div>
-    </section>
-
-    <!-- ═══════════ PAGE 7 — DEEPER QUESTIONS ═══════════ -->
-    <section class="section" id="sec6" data-title="deeper questions">
-      <div class="inner">
-        <div class="stagger">
-          <h2 class="title-hand">Let's go a little deeper…</h2>
-          <p>Only the questions you feel comfortable with — you can skip any of them. I'll be here, reading everything. 🤍</p>
-        </div>
-        <div class="chip" id="deepCounter"></div>
-        <div id="deepBox"></div>
-      </div>
-    </section>
-
-    <!-- ═══════════ PAGE 8 — ABOUT ZEUS ═══════════ -->
-    <section class="section" id="sec7" data-title="about Zeus">
-      <div class="inner stagger">
-        <h2 class="title-hand">You already know me… <span class="zeus-name">Zeus.</span></h2>
-        <p>Hi. In case you forgot who was behind all of this — it's me.</p>
-        <p>I made this because I wanted to give you something different. Not another "happy birthday" text that disappears in five minutes — something you could actually feel. Something that stays.</p>
-        <p>The truth is, I just want to make you smile. That's genuinely it. Nothing complicated, nothing hidden.</p>
-        <p>And if you ever need someone to talk to, laugh with, or simply hang around with — I'd rather be that person who actually makes time for you. Not someone who shows up once in a while. The one who shows up.</p>
-        <p class="soft-line">"I'll always try to make time for you." That's a promise I actually intend to keep.</p>
-        <button class="btn btn-primary" data-goto="8">Continue ❤️</button>
-      </div>
-    </section>
-
-    <!-- ═══════════ PAGE 9 — RAPID FIRE ═══════════ -->
-    <section class="section" id="sec8" data-title="rapid fire">
-      <div class="inner">
-        <div class="stagger">
-          <h2 class="title-hand">Rapid fire ⚡</h2>
-          <p>No overthinking — first thing that comes to mind. I'll try to keep up 😂</p>
-        </div>
-        <div class="chip" id="fireCounter"></div>
-        <div id="fireBox"></div>
-      </div>
-    </section>
-
-    <!-- ═══════════ PAGE 10 — FINAL MESSAGE ═══════════ -->
-    <section class="section" id="sec9" data-title="the final message">
-      <div class="inner">
-        <div class="stagger final-head">
-          <h1 class="title-hero">Hey Kagura ❤️</h1>
-          <p class="kicker">You already know me.</p>
-          <p class="zeus-signature">Zeus.</p>
-        </div>
-
-        <div class="final-text stagger" id="finalText">
-          <p>By now you've made it through all of it — the questions, the wishes, the little detours. And honestly? I thought you might just open this, look around for two seconds and snub me 😂❤️</p>
-          <p>I had sleepless nights coding and putting all of this together, because I wanted to make something that would actually make you smile. Not a perfect website — just something made with real care, by someone who genuinely cares about you.</p>
-          <p>I really hope you feel much better after going through this. Whatever you wrote, wherever your head is at — I hope at least one line in here felt like a small hug.</p>
-          <p>I don't know everything about your life, and I won't pretend I do. But I know what I wish for you: peace on the loud days, laughter on the hard ones, and people who stay even when staying would be easier to skip.</p>
-          <p>I wish you strength — not the kind you have to fake, but the quiet kind that carries you through one more day. And a future you can be proud of, built out of memories you actually want to keep.</p>
-          <p>You deserve happiness. You deserve good people, beautiful memories, and a life that feels soft to you. Not because you proved anything — just because you're you.</p>
-          <p>Whatever kind of day you're having, I hope tomorrow gives you another reason to smile.</p>
-          <p>Take care of yourself, Nela. Please. ❤️</p>
-        </div>
-
-        <!-- FINAL PHOTO REQUEST -->
-        <div class="final-block stagger">
-          <h3 class="title-hand">One last thing…</h3>
-          <p>Can you send me a photo of yourself? ❤️</p>
-          <p class="note">Only if you want to. No pressure at all — I just think it would be nice to finally see you.</p>
-
-          <label class="upload-zone" id="selfieZone" for="selfieInput">
-            <input type="file" id="selfieInput" accept="image/*" hidden />
-            <span class="upload-icon">🫶</span>
-            <span class="upload-title">Choose your photo</span>
-            <span class="upload-sub">Just one — the one you like most</span>
-          </label>
-
-          <div class="preview-grid single" id="selfiePreview"></div>
-          <p class="note" id="selfieCount"></p>
-
-          <button class="btn btn-whatsapp" id="waBtn">📲 Send Photo to Zeus ❤️</button>
-          <p class="note honest-note" id="waNote">
-            <span class="lock">🔒</span> Honest note: a website can't secretly send a photo to WhatsApp by itself — that needs a server. So this button opens WhatsApp with a message already written for me. Once it opens, tap the 📎 and attach the photo you picked, then press send. Nothing gets sent unless you send it — that part is yours ❤️
-          </p>
-        </div>
-
-        <!-- VOICE MESSAGE -->
-        <div class="final-block stagger voice-box" id="voiceBox">
-          <h3 class="title-hand">One more thing… 🔊</h3>
-          <p>Want me to read the whole message to you? I'm told my voice is decent 😌 (It's your browser's voice, technically — but the words are mine.)</p>
-          <div class="voice-controls">
-            <button class="btn btn-primary" id="voicePlay">🔊 Listen to Zeus</button>
-            <button class="btn btn-ghost" id="voicePause" disabled>⏸ Pause</button>
-            <button class="btn btn-ghost" id="voiceResume" disabled>▶️ Resume</button>
-            <button class="btn btn-ghost" id="voiceStop" disabled>⏹ Stop</button>
-          </div>
-          <p class="note" id="voiceStatus" role="status"></p>
-          <p class="note" id="voiceFallback" hidden>Your browser doesn't support voice playback, but you can still read the message ❤️</p>
-        </div>
-
-        <footer class="final-foot stagger">
-          <p class="made-with">Made with ❤️ and too many late nights, by Zeus</p>
-          <button class="link-btn" id="restartLink">Start over from the beginning ↺</button>
-        </footer>
-      </div>
-    </section>
-
-  </main>
-
-  <noscript>
-    <p style="color:#fff;text-align:center;padding:40px 20px;font-family:sans-serif;">
-      Please enable JavaScript to see this ❤️
-    </p>
-  </noscript>
-
-  <script src="main.js"></script>
+<script src="main.js?v=2"></script>
 </body>
 </html>
